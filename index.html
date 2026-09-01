@@ -97,7 +97,21 @@
       יש להתחבר באמצעות כתובת המייל המשויכת לכרטיסיית המטאטא.
     </p>
 
-  </main>
+  </main><section id="dashboard" class="container" style="display: none;">
+  <h1>המטאטא</h1>
+
+  <h2 id="welcomeName">היי 👋</h2>
+
+  <p>נותרו לך בכרטיסייה:</p>
+
+  <div style="font-size: 48px; font-weight: bold; margin: 20px 0;">
+    <span id="remainingHours">--</span> שעות
+  </div>
+
+  <button type="button">הזמנת הסטודיו</button>
+  <button type="button">ההזמנות שלי</button>
+  <button type="button">היסטוריית שעות</button>
+</section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -126,7 +140,34 @@
     return;
   }
 
-  alert('התחברת בהצלחה!');
+const user = data.user;
+
+const { data: profile } = await supabaseClient
+  .from('profiles')
+  .select('*')
+  .eq('id', user.id)
+  .single();
+
+const { data: balance, error: balanceError } = await supabaseClient
+  .from('user_hour_balances')
+  .select('remaining_hours')
+  .eq('user_id', user.id)
+  .single();
+
+if (balanceError) {
+  console.error(balanceError);
+}
+
+document.querySelector('main').style.display = 'none';
+document.getElementById('dashboard').style.display = 'block';
+
+if (profile && profile.full_name) {
+  document.getElementById('welcomeName').textContent =
+    'היי ' + profile.full_name + ' 👋';
+}
+
+document.getElementById('remainingHours').textContent =
+  balance ? balance.remaining_hours : 0;
 });
 </script>
 </body>
