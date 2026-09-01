@@ -89,9 +89,9 @@
       placeholder="סיסמה"
     >
 
-    <button type="button">
-      כניסה
-    </button>
+    <button type="button" id="loginButton">
+  כניסה
+</button>
 
     <p class="note">
       יש להתחבר באמצעות כתובת המייל המשויכת לכרטיסיית המטאטא.
@@ -109,7 +109,27 @@
   const supabaseClient = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
-  );
+  );document.getElementById('loginButton').addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email || !password) {
+    alert('יש להזין מייל וסיסמה');
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    alert('לא הצלחנו להתחבר. בדקי את המייל והסיסמה.');
+    return;
+  }
+
+  alert('התחברת בהצלחה!');
+});
 </script>
 </body>
 
