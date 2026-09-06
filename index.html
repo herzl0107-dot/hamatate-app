@@ -205,6 +205,65 @@ document.getElementById('backToDashboardButton').addEventListener('click', () =>
   document.getElementById('bookingScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 });
+
+  document.getElementById('confirmBookingButton').addEventListener('click', async () => {
+  const bookingDate = document.getElementById('bookingDate').value;
+  const startTime = document.getElementById('startTime').value;
+  const duration = parseFloat(document.getElementById('duration').value);
+
+  if (!bookingDate || !startTime || !duration) {
+    alert('יש למלא תאריך, שעת התחלה ומשך הזמנה');
+    return;
+  }
+
+  const start = new Date(`${bookingDate}T${startTime}:00`);
+  const end = new Date(start.getTime() + duration * 60 * 60 * 1000);
+
+  const { data, error } = await supabaseClient.rpc('create_booking', {
+    p_start: start.toISOString(),
+    p_end: end.toISOString()
+  });
+
+  if (error) {
+    console.error(error);
+
+    const message = error.message || '';
+
+    if (message.includes('NOT_ENOUGH_HOURS')) {
+      alert('אין מספיק שעות בכרטיסייה להזמנה הזו');
+    } else if (message.includes('TIME_NOT_AVAILABLE')) {
+      alert('השעה שבחרת כבר תפוסה');
+    } else if (message.includes('MAX_3_ACTIVE_BOOKINGS')) {
+      alert('כבר יש לך 3 הזמנות פעילות');
+    } else if (message.includes('MAX_30_DAYS_AHEAD')) {
+      alert('אפשר להזמין עד 30 יום מראש');
+    } else if (message.includes('BOOKING_MUST_BE_IN_FUTURE')) {
+      alert('אי אפשר להזמין מועד שכבר עבר');
+    } else if (message.includes('MINIMUM_ONE_HOUR')) {
+      alert('המינימום להזמנה הוא שעה');
+    } else {
+      alert('לא הצלחנו לבצע את ההזמנה. נסי שוב.');
+    }
+
+    return;
+  }
+
+  alert('ההזמנה נשמרה בהצלחה!');
+
+  const { data: updatedBalance } = await supabaseClient
+    .from('user_hour_balances')
+    .select('remaining_hours')
+    .eq('user_id', (await supabaseClient.auth.getUser()).data.user.id)
+    .single();
+
+  if (updatedBalance) {
+    document.getElementById('remainingHours').textContent =
+      updatedBalance.remaining_hours;
+  }
+
+  document.getElementById('bookingScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+});
 </script>
 </body>
 
