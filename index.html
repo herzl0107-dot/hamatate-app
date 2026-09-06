@@ -546,10 +546,61 @@ document.getElementById('myBookingsList').addEventListener('click', async (event
   document.getElementById('hoursHistoryScreen').style.display = 'block';
 });
 
-document.getElementById('backFromHoursHistoryButton').addEventListener('click', () => {
-  document.getElementById('hoursHistoryScreen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
+document.getElementById('hoursHistoryButton').addEventListener('click', async () => {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('hoursHistoryScreen').style.display = 'block';
+
+  await loadHoursHistory();
 });
+  async function loadHoursHistory() {
+  const list = document.getElementById('hoursHistoryList');
+
+  list.innerHTML = '<p>טוענת היסטוריה...</p>';
+
+  const { data, error } = await supabaseClient
+    .from('hour_transactions')
+    .select('created_at, hours, transaction_type, description')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    list.innerHTML = '<p>לא הצלחנו לטעון את היסטוריית השעות כרגע.</p>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = '<p>עדיין אין תנועות שעות.</p>';
+    return;
+  }
+
+  const formatDate = (dateString) => {
+    return new Intl.DateTimeFormat('he-IL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Asia/Jerusalem'
+    }).format(new Date(dateString));
+  };
+
+  list.innerHTML = data.map(transaction => {
+    const sign = Number(transaction.hours) > 0 ? '+' : '';
+    const hoursText = `${sign}${transaction.hours} שעות`;
+
+    return `
+      <div style="padding: 16px 0; border-bottom: 1px solid #ccc;">
+        <strong>${formatDate(transaction.created_at)}</strong>
+
+        <div style="margin-top: 6px;">
+          ${transaction.description || 'תנועת שעות'}
+        </div>
+
+        <div style="font-size: 20px; font-weight: bold; margin-top: 6px;">
+          ${hoursText}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 </script>
 </body>
 
