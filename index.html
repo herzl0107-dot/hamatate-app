@@ -117,6 +117,10 @@
 
   <label for="bookingDate">תאריך</label>
 <input type="date" id="bookingDate" required>
+  <div id="availabilityInfo" style="margin: 20px 0; line-height: 1.6;">
+  <strong>זמינות בתאריך שבחרת</strong>
+  <p id="bookedSlots">בחרי תאריך כדי לראות אילו שעות כבר תפוסות.</p>
+</div>
   <label for="startTime">שעת התחלה</label>
 <input
   type="time"
@@ -339,6 +343,48 @@ updateLatestStartTime();
     startTimeInput.value = '';
   }
 });
+  const bookedSlotsText = document.getElementById('bookedSlots');
+
+async function loadBookedSlots() {
+  const selectedDate = bookingDateInput.value;
+
+  if (!selectedDate) {
+    bookedSlotsText.textContent = 'בחרי תאריך כדי לראות אילו שעות כבר תפוסות.';
+    return;
+  }
+
+  bookedSlotsText.textContent = 'טוענת זמינות...';
+
+  const { data, error } = await supabaseClient.rpc('get_booked_slots', {
+    p_date: selectedDate
+  });
+
+  if (error) {
+    console.error(error);
+    bookedSlotsText.textContent = 'לא הצלחנו לטעון את הזמינות כרגע.';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    bookedSlotsText.textContent = 'כל שעות הפעילות פנויות בתאריך הזה 🎉';
+    return;
+  }
+
+  const formatTime = (dateString) => {
+    return new Intl.DateTimeFormat('he-IL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Jerusalem'
+    }).format(new Date(dateString));
+  };
+
+  bookedSlotsText.innerHTML = data
+    .map(slot => `${formatTime(slot.start_time)}–${formatTime(slot.end_time)}`)
+    .join('<br>');
+}
+
+bookingDateInput.addEventListener('change', loadBookedSlots);
 </script>
 </body>
 
