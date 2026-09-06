@@ -842,7 +842,141 @@ document.getElementById('backFromWeeklyScheduleButton').addEventListener('click'
   document.getElementById('weeklyScheduleScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 });
-  async function loadWeeklySchedule() {
+async function loadWeeklySchedule() {
+  const list = document.getElementById('weeklyScheduleList');
+  list.innerHTML = '<p>טוענת לו״ז...</p>';
+
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+
+  const dayNames = {
+    0: 'א׳',
+    1: 'ב׳',
+    2: 'ג׳',
+    3: 'ד׳',
+    4: 'ה׳'
+  };
+
+  const days = [];
+  const currentDate = new Date(today);
+
+  while (days.length < 5) {
+    const dayOfWeek = currentDate.getDay();
+
+    if (dayOfWeek >= 0 && dayOfWeek <= 4) {
+      days.push(new Date(currentDate));
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  const formatDateForSupabase = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatDisplayDate = (date) => {
+    return new Intl.DateTimeFormat('he-IL', {
+      day: '2-digit',
+      month: '2-digit'
+    }).format(date);
+  };
+
+  const bookedSlotsByDay = [];
+
+  for (const date of days) {
+    const { data, error } = await supabaseClient.rpc('get_booked_slots', {
+      p_date: formatDateForSupabase(date)
+    });
+
+    if (error) {
+      console.error(error);
+      bookedSlotsByDay.push([]);
+    } else {
+      bookedSlotsByDay.push(data || []);
+    }
+  }
+
+  let tableHTML = `
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: center;">
+        <thead>
+          <tr>
+            <th style="padding: 10px; border: 1px solid #ccc;">שעה</th>
+  `;
+
+  days.forEach(date => {
+    tableHTML += `
+      <th style="padding: 10px; border: 1px solid #ccc;">
+        ${dayNames[date.getDay()]}<br>
+        ${formatDisplayDate(date)}
+      </th>
+    `;
+  });
+
+  tableHTML += `
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  for (let hour = 10; hour < 20; hour++) {
+    const slotStart = hour;
+    const slotEnd = hour + 1;
+
+    tableHTML += `
+      <tr>
+        <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">
+          ${String(hour).padStart(2, '0')}:00–${String(hour + 1).padStart(2, '0')}:00
+        </td>
+    `;
+
+    bookedSlotsByDay.forEach(daySlots => {
+      const isBusy = daySlots.some(slot => {
+        const start = new Date(slot.start_time);
+        const end = new Date(slot.end_time);
+
+        const startParts = new Intl.DateTimeFormat('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Asia/Jerusalem'
+        }).format(start).split(':').map(Number);
+
+        const endParts = new Intl.DateTimeFormat('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Asia/Jerusalem'
+        }).format(end).split(':').map(Number);
+
+        const bookingStart = startParts[0] + startParts[1] / 60;
+        const bookingEnd = endParts[0] + endParts[1] / 60;
+
+        return bookingStart < slotEnd && bookingEnd > slotStart;
+      });
+
+      tableHTML += `
+        <td style="padding: 10px; border: 1px solid #ccc;">
+          ${isBusy ? 'תפוס' : 'פנוי'}
+        </td>
+      `;
+    });
+
+    tableHTML += '</tr>';
+  }
+
+  tableHTML += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  list.innerHTML = tableHTML;
+} {
   const list = document.getElementById('weeklyScheduleList');
   list.innerHTML = '<p>טוענת לו״ז...</p>';
 
