@@ -167,6 +167,34 @@
     חזרה
   </button>
 </section>
+  <section id="adminUsersScreen" class="container" style="display: none;">
+  <h1>ניהול כרטיסיות</h1>
+
+  <label for="adminUserEmail">מייל של המשתמשת</label>
+  <input
+    type="email"
+    id="adminUserEmail"
+    placeholder="example@email.com"
+  >
+
+  <button type="button" id="add3HoursButton">
+    הוספת 3 שעות
+  </button>
+
+  <button type="button" id="add5HoursButton">
+    הוספת 5 שעות
+  </button>
+
+  <button type="button" id="add10HoursButton">
+    הוספת 10 שעות
+  </button>
+
+  <p id="adminUserMessage" class="note"></p>
+
+  <button type="button" id="backFromAdminUsersButton">
+    חזרה
+  </button>
+</section>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <section id="bookingScreen" class="container" style="display: none;">
   <h1>הזמנת הסטודיו</h1>
@@ -735,6 +763,60 @@ document.getElementById('backFromAdminBookingsButton').addEventListener('click',
     </div>
   `).join('');
 }
+  document.getElementById('adminUsersButton').addEventListener('click', () => {
+  document.getElementById('adminScreen').style.display = 'none';
+  document.getElementById('adminUsersScreen').style.display = 'block';
+});
+
+document.getElementById('backFromAdminUsersButton').addEventListener('click', () => {
+  document.getElementById('adminUsersScreen').style.display = 'none';
+  document.getElementById('adminScreen').style.display = 'block';
+});
+  async function addHoursToUser(hoursToAdd) {
+  const email = document.getElementById('adminUserEmail').value.trim();
+  const message = document.getElementById('adminUserMessage');
+
+  if (!email) {
+    message.textContent = 'יש להזין כתובת מייל.';
+    return;
+  }
+
+  message.textContent = 'מעדכנת כרטיסייה...';
+
+  const { data, error } = await supabaseClient.rpc('admin_add_hours_by_email', {
+    p_email: email,
+    p_hours: hoursToAdd
+  });
+
+  if (error) {
+    console.error(error);
+
+    if ((error.message || '').includes('USER_NOT_FOUND')) {
+      message.textContent = 'לא נמצא משתמש עם כתובת המייל הזו.';
+    } else if ((error.message || '').includes('NOT_ADMIN')) {
+      message.textContent = 'אין הרשאת מנהל לביצוע הפעולה.';
+    } else {
+      message.textContent = 'לא הצלחנו לעדכן את הכרטיסייה.';
+    }
+
+    return;
+  }
+
+  message.textContent =
+    `נוספו ${hoursToAdd} שעות בהצלחה. היתרה החדשה היא ${data} שעות.`;
+}
+
+document.getElementById('add3HoursButton').addEventListener('click', () => {
+  addHoursToUser(3);
+});
+
+document.getElementById('add5HoursButton').addEventListener('click', () => {
+  addHoursToUser(5);
+});
+
+document.getElementById('add10HoursButton').addEventListener('click', () => {
+  addHoursToUser(10);
+});
 </script>
 </body>
 
