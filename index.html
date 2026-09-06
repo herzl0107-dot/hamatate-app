@@ -108,8 +108,19 @@
     <span id="remainingHours">--</span> שעות
   </div>
 
-<button type="button" id="openBookingButton">הזמנת הסטודיו</button>  <button type="button">ההזמנות שלי</button>
+<button type="button" id="openBookingButton">הזמנת הסטודיו</button> <button type="button" id="myBookingsButton">ההזמנות שלי</button>
   <button type="button">היסטוריית שעות</button>
+</section>
+  <section id="myBookingsScreen" class="container" style="display: none;">
+  <h1>ההזמנות שלי</h1>
+
+  <div id="myBookingsList">
+    <p>טוענת הזמנות...</p>
+  </div>
+
+  <button type="button" id="backFromMyBookingsButton">
+    חזרה
+  </button>
 </section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <section id="bookingScreen" class="container" style="display: none;">
@@ -385,6 +396,15 @@ async function loadBookedSlots() {
 }
 
 bookingDateInput.addEventListener('change', loadBookedSlots);
+  document.getElementById('myBookingsButton').addEventListener('click', () => {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('myBookingsScreen').style.display = 'block';
+});
+
+document.getElementById('backFromMyBookingsButton').addEventListener('click', () => {
+  document.getElementById('myBookingsScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+});
 </script>
 </body>
 
