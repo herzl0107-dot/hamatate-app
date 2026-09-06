@@ -325,6 +325,20 @@ function updateLatestStartTime() {
 durationInput.addEventListener('change', updateLatestStartTime);
 
 updateLatestStartTime();
+  startTimeInput.addEventListener('change', () => {
+  if (!startTimeInput.value) return;
+
+  const duration = parseFloat(durationInput.value);
+
+  const [hour, minute] = startTimeInput.value.split(':').map(Number);
+  const startMinutes = (hour * 60) + minute;
+  const endMinutes = startMinutes + (duration * 60);
+
+  if (endMinutes > 20 * 60) {
+    alert('סטודיו המטאטא פתוח עד 20:00. יש לבחור שעת התחלה מוקדמת יותר או משך הזמנה קצר יותר.');
+    startTimeInput.value = '';
+  }
+});
 </script>
 </body>
 
