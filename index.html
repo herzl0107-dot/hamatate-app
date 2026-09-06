@@ -137,7 +137,26 @@
     חזרה
   </button>
 </section>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<section id="adminScreen" class="container" style="display: none;">
+  <h1>ניהול הסטודיו</h1>
+
+  <button type="button" id="adminBookingsButton">
+    כל ההזמנות
+  </button>
+
+  <button type="button" id="adminUsersButton">
+    ניהול כרטיסיות
+  </button>
+
+  <button type="button" id="adminBlocksButton">
+    חסימת שעות
+  </button>
+
+  <button type="button" id="backFromAdminButton">
+    חזרה
+  </button>
+</section>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <section id="bookingScreen" class="container" style="display: none;">
   <h1>הזמנת הסטודיו</h1>
 
@@ -627,6 +646,15 @@ document.getElementById('hoursHistoryButton').addEventListener('click', async ()
 
   document.getElementById('email').value = '';
   document.getElementById('password').value = '';
+});
+  document.getElementById('adminButton').addEventListener('click', () => {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('adminScreen').style.display = 'block';
+});
+
+document.getElementById('backFromAdminButton').addEventListener('click', () => {
+  document.getElementById('adminScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
 });
 </script>
 </body>
