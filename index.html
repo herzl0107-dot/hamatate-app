@@ -448,14 +448,88 @@ document.getElementById('backFromMyBookingsButton').addEventListener('click', ()
   };
 
   list.innerHTML = data.map(booking => `
-    <div style="padding: 16px 0; border-bottom: 1px solid #ccc;">
-      <strong>${formatDate(booking.start_time)}</strong>
-      <div>
-        ${formatTime(booking.start_time)}–${formatTime(booking.end_time)}
-      </div>
-    </div>
+   <div style="padding: 16px 0; border-bottom: 1px solid #ccc;">
+  <strong>${formatDate(booking.start_time)}</strong>
+
+  <div>
+    ${formatTime(booking.start_time)}–${formatTime(booking.end_time)}
+  </div>
+
+  <button
+    type="button"
+    class="cancelBookingButton"
+    data-booking-id="${booking.id}"
+    data-start-time="${booking.start_time}"
+  >
+    ביטול הזמנה
+  </button>
+</div>
   `).join('');
 }
+document.getElementById('myBookingsList').addEventListener('click', async (event) => {
+  const button = event.target.closest('.cancelBookingButton');
+
+  if (!button) return;
+
+  const bookingId = Number(button.dataset.bookingId);
+  const startTime = new Date(button.dataset.startTime);
+  const now = new Date();
+
+  const hoursUntilBooking =
+    (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  let confirmationMessage;
+
+  if (hoursUntilBooking > 24) {
+    confirmationMessage =
+      'לבטל את ההזמנה? השעות יוחזרו לכרטיסייה שלך.';
+  } else {
+    confirmationMessage =
+      'נותרו פחות מ־24 שעות עד ההזמנה. ניתן לבטל, אך השעות לא יוחזרו לכרטיסייה. להמשיך בביטול?';
+  }
+
+  const confirmed = confirm(confirmationMessage);
+
+  if (!confirmed) return;
+
+  button.disabled = true;
+  button.textContent = 'מבטלת...';
+
+  const { data: refunded, error } = await supabaseClient.rpc('cancel_booking', {
+    p_booking_id: bookingId
+  });
+
+  if (error) {
+    console.error(error);
+    alert('לא הצלחנו לבטל את ההזמנה. נסי שוב.');
+    button.disabled = false;
+    button.textContent = 'ביטול הזמנה';
+    return;
+  }
+
+  if (refunded) {
+    alert('ההזמנה בוטלה והשעות הוחזרו לכרטיסייה.');
+  } else {
+    alert('ההזמנה בוטלה. מאחר שנותרו פחות מ־24 שעות, השעות לא הוחזרו.');
+  }
+
+  await loadMyBookings();
+
+  const { data: userData } = await supabaseClient.auth.getUser();
+
+  if (userData?.user) {
+    const { data: updatedBalance } = await supabaseClient
+      .from('user_hour_balances')
+      .select('remaining_hours')
+      .eq('user_id', userData.user.id)
+      .single();
+
+    if (updatedBalance) {
+      document.getElementById('remainingHours').textContent =
+        updatedBalance.remaining_hours;
+    }
+  }
+});
 </script>
 </body>
 
