@@ -110,6 +110,9 @@
 
 <button type="button" id="openBookingButton">הזמנת הסטודיו</button> <button type="button" id="myBookingsButton">ההזמנות שלי</button>
 <button type="button" id="hoursHistoryButton">היסטוריית שעות</button>
+    <button type="button" id="weeklyScheduleButton">
+  לו״ז שבועי
+</button>
     <button type="button" id="adminButton" style="display: none;">
   ניהול הסטודיו
 </button>
@@ -192,6 +195,17 @@
   <p id="adminUserMessage" class="note"></p>
 
   <button type="button" id="backFromAdminUsersButton">
+    חזרה
+  </button>
+</section>
+  <section id="weeklyScheduleScreen" class="container" style="display: none;">
+  <h1>לו״ז שבועי</h1>
+
+  <div id="weeklyScheduleList">
+    <p>טוענת לו״ז...</p>
+  </div>
+
+  <button type="button" id="backFromWeeklyScheduleButton">
     חזרה
   </button>
 </section>
@@ -816,6 +830,15 @@ document.getElementById('add5HoursButton').addEventListener('click', () => {
 
 document.getElementById('add10HoursButton').addEventListener('click', () => {
   addHoursToUser(10);
+});
+  document.getElementById('weeklyScheduleButton').addEventListener('click', () => {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('weeklyScheduleScreen').style.display = 'block';
+});
+
+document.getElementById('backFromWeeklyScheduleButton').addEventListener('click', () => {
+  document.getElementById('weeklyScheduleScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
 });
 </script>
 </body>
