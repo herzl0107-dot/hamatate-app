@@ -396,15 +396,66 @@ async function loadBookedSlots() {
 }
 
 bookingDateInput.addEventListener('change', loadBookedSlots);
-  document.getElementById('myBookingsButton').addEventListener('click', () => {
+document.getElementById('myBookingsButton').addEventListener('click', async () => {
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('myBookingsScreen').style.display = 'block';
-});
 
+  await loadMyBookings();
+});
 document.getElementById('backFromMyBookingsButton').addEventListener('click', () => {
   document.getElementById('myBookingsScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 });
+  async function loadMyBookings() {
+  const list = document.getElementById('myBookingsList');
+
+  list.innerHTML = '<p>טוענת הזמנות...</p>';
+
+  const { data, error } = await supabaseClient
+    .from('bookings')
+    .select('id, start_time, end_time, status')
+    .eq('status', 'active')
+    .gt('end_time', new Date().toISOString())
+    .order('start_time', { ascending: true });
+
+  if (error) {
+    console.error(error);
+    list.innerHTML = '<p>לא הצלחנו לטעון את ההזמנות כרגע.</p>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = '<p>אין לך הזמנות קרובות.</p>';
+    return;
+  }
+
+  const formatDate = (dateString) => {
+    return new Intl.DateTimeFormat('he-IL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Asia/Jerusalem'
+    }).format(new Date(dateString));
+  };
+
+  const formatTime = (dateString) => {
+    return new Intl.DateTimeFormat('he-IL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Jerusalem'
+    }).format(new Date(dateString));
+  };
+
+  list.innerHTML = data.map(booking => `
+    <div style="padding: 16px 0; border-bottom: 1px solid #ccc;">
+      <strong>${formatDate(booking.start_time)}</strong>
+      <div>
+        ${formatTime(booking.start_time)}–${formatTime(booking.end_time)}
+      </div>
+    </div>
+  `).join('');
+}
 </script>
 </body>
 
