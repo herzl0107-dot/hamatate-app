@@ -116,11 +116,16 @@
   <h1>הזמנת הסטודיו</h1>
 
   <label for="bookingDate">תאריך</label>
-  <input type="date" id="bookingDate">
-
+<input type="date" id="bookingDate" required>
   <label for="startTime">שעת התחלה</label>
-  <input type="time" id="startTime" step="1800">
-
+<input
+  type="time"
+  id="startTime"
+  min="10:00"
+  max="19:00"
+  step="1800"
+  required
+>
   <label for="duration">משך ההזמנה</label>
   <select id="duration" style="width: 100%; box-sizing: border-box; padding: 14px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px;">
     <option value="1">שעה</option>
@@ -268,6 +273,58 @@ document.getElementById('backToDashboardButton').addEventListener('click', () =>
   document.getElementById('bookingScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 });
+  const bookingDateInput = document.getElementById('bookingDate');
+
+const today = new Date();
+const maxDate = new Date();
+maxDate.setDate(today.getDate() + 30);
+
+const formatDateForInput = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+bookingDateInput.min = formatDateForInput(today);
+bookingDateInput.max = formatDateForInput(maxDate);
+  bookingDateInput.addEventListener('change', () => {
+  if (!bookingDateInput.value) return;
+
+  const selectedDate = new Date(bookingDateInput.value + 'T12:00:00');
+  const dayOfWeek = selectedDate.getDay();
+
+  if (dayOfWeek === 5 || dayOfWeek === 6) {
+    alert('סטודיו המטאטא פתוח להזמנות בימים ראשון עד חמישי בלבד');
+    bookingDateInput.value = '';
+  }
+});
+  const startTimeInput = document.getElementById('startTime');
+const durationInput = document.getElementById('duration');
+
+function updateLatestStartTime() {
+  const duration = parseFloat(durationInput.value);
+
+  const closingMinutes = 20 * 60;
+  const latestStartMinutes = closingMinutes - (duration * 60);
+
+  const hours = Math.floor(latestStartMinutes / 60);
+  const minutes = latestStartMinutes % 60;
+
+  startTimeInput.max =
+    String(hours).padStart(2, '0') +
+    ':' +
+    String(minutes).padStart(2, '0');
+
+  if (startTimeInput.value && startTimeInput.value > startTimeInput.max) {
+    startTimeInput.value = '';
+  }
+}
+
+durationInput.addEventListener('change', updateLatestStartTime);
+
+updateLatestStartTime();
 </script>
 </body>
 
