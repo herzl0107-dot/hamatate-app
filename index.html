@@ -110,6 +110,7 @@
 
 <button type="button" id="openBookingButton">הזמנת הסטודיו</button> <button type="button" id="myBookingsButton">ההזמנות שלי</button>
 <button type="button" id="hoursHistoryButton">היסטוריית שעות</button>
+    <button type="button" id="logoutButton">התנתקות</button>
   </section>
   <section id="myBookingsScreen" class="container" style="display: none;">
   <h1>ההזמנות שלי</h1>
@@ -601,6 +602,25 @@ document.getElementById('hoursHistoryButton').addEventListener('click', async ()
     `;
   }).join('');
 }
+  document.getElementById('logoutButton').addEventListener('click', async () => {
+  const { error } = await supabaseClient.auth.signOut();
+
+  if (error) {
+    console.error(error);
+    alert('לא הצלחנו להתנתק. נסי שוב.');
+    return;
+  }
+
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('bookingScreen').style.display = 'none';
+  document.getElementById('myBookingsScreen').style.display = 'none';
+  document.getElementById('hoursHistoryScreen').style.display = 'none';
+
+  document.querySelector('main').style.display = 'block';
+
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+});
 </script>
 </body>
 
