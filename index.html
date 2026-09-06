@@ -109,8 +109,8 @@
   </div>
 
 <button type="button" id="openBookingButton">הזמנת הסטודיו</button> <button type="button" id="myBookingsButton">ההזמנות שלי</button>
-  <button type="button">היסטוריית שעות</button>
-</section>
+<button type="button" id="hoursHistoryButton">היסטוריית שעות</button>
+  </section>
   <section id="myBookingsScreen" class="container" style="display: none;">
   <h1>ההזמנות שלי</h1>
 
@@ -119,6 +119,17 @@
   </div>
 
   <button type="button" id="backFromMyBookingsButton">
+    חזרה
+  </button>
+</section>
+  <section id="hoursHistoryScreen" class="container" style="display: none;">
+  <h1>היסטוריית שעות</h1>
+
+  <div id="hoursHistoryList">
+    <p>טוענת היסטוריה...</p>
+  </div>
+
+  <button type="button" id="backFromHoursHistoryButton">
     חזרה
   </button>
 </section>
@@ -529,6 +540,15 @@ document.getElementById('myBookingsList').addEventListener('click', async (event
         updatedBalance.remaining_hours;
     }
   }
+});
+  document.getElementById('hoursHistoryButton').addEventListener('click', () => {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('hoursHistoryScreen').style.display = 'block';
+});
+
+document.getElementById('backFromHoursHistoryButton').addEventListener('click', () => {
+  document.getElementById('hoursHistoryScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
 });
 </script>
 </body>
