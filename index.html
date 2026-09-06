@@ -108,12 +108,40 @@
     <span id="remainingHours">--</span> שעות
   </div>
 
-  <button type="button">הזמנת הסטודיו</button>
-  <button type="button">ההזמנות שלי</button>
+<button type="button" id="openBookingButton">הזמנת הסטודיו</button>  <button type="button">ההזמנות שלי</button>
   <button type="button">היסטוריית שעות</button>
 </section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<section id="bookingScreen" class="container" style="display: none;">
+  <h1>הזמנת הסטודיו</h1>
 
+  <label for="bookingDate">תאריך</label>
+  <input type="date" id="bookingDate">
+
+  <label for="startTime">שעת התחלה</label>
+  <input type="time" id="startTime" step="1800">
+
+  <label for="duration">משך ההזמנה</label>
+  <select id="duration" style="width: 100%; box-sizing: border-box; padding: 14px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px;">
+    <option value="1">שעה</option>
+    <option value="1.5">שעה וחצי</option>
+    <option value="2">שעתיים</option>
+    <option value="2.5">שעתיים וחצי</option>
+    <option value="3">3 שעות</option>
+  </select>
+
+  <button type="button" id="confirmBookingButton">
+    אישור הזמנה
+  </button>
+
+  <button type="button" id="backToDashboardButton">
+    חזרה
+  </button>
+
+  <p class="note">
+    ניתן להזמין עד 30 יום מראש. המינימום להזמנה הוא שעה.
+  </p>
+</section>
 <script>
   const SUPABASE_URL = 'https://kfqfivyeeotvaoaatifz.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_YDTHDuKsJPAsjkgAnExxyg_wjr73ie0';
@@ -168,6 +196,14 @@ if (profile && profile.full_name) {
 
 document.getElementById('remainingHours').textContent =
   balance ? balance.remaining_hours : 0;
+});document.getElementById('openBookingButton').addEventListener('click', () => {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('bookingScreen').style.display = 'block';
+});
+
+document.getElementById('backToDashboardButton').addEventListener('click', () => {
+  document.getElementById('bookingScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
 });
 </script>
 </body>
