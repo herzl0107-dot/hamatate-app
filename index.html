@@ -667,15 +667,74 @@ document.getElementById('backFromAdminButton').addEventListener('click', () => {
   document.getElementById('adminScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 });
-  document.getElementById('adminBookingsButton').addEventListener('click', () => {
+document.getElementById('adminBookingsButton').addEventListener('click', async () => {
   document.getElementById('adminScreen').style.display = 'none';
   document.getElementById('adminBookingsScreen').style.display = 'block';
-});
 
+  await loadAdminBookings();
+});
 document.getElementById('backFromAdminBookingsButton').addEventListener('click', () => {
   document.getElementById('adminBookingsScreen').style.display = 'none';
   document.getElementById('adminScreen').style.display = 'block';
 });
+  async function loadAdminBookings() {
+  const list = document.getElementById('adminBookingsList');
+
+  list.innerHTML = '<p>טוענת הזמנות...</p>';
+
+  const { data, error } = await supabaseClient.rpc('admin_get_all_bookings');
+
+  if (error) {
+    console.error(error);
+    list.innerHTML = '<p>לא הצלחנו לטעון את ההזמנות.</p>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = '<p>אין הזמנות במערכת.</p>';
+    return;
+  }
+
+  const formatDate = (dateString) => {
+    return new Intl.DateTimeFormat('he-IL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Asia/Jerusalem'
+    }).format(new Date(dateString));
+  };
+
+  const formatTime = (dateString) => {
+    return new Intl.DateTimeFormat('he-IL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Jerusalem'
+    }).format(new Date(dateString));
+  };
+
+  list.innerHTML = data.map(booking => `
+    <div style="padding: 16px 0; border-bottom: 1px solid #ccc;">
+      <strong>${formatDate(booking.start_time)}</strong>
+
+      <div style="margin-top: 6px;">
+        ${formatTime(booking.start_time)}–${formatTime(booking.end_time)}
+      </div>
+
+      <div style="margin-top: 6px;">
+        ${booking.full_name || 'ללא שם'}
+      </div>
+
+      <div style="font-size: 14px; margin-top: 4px;">
+        ${booking.email || ''}
+      </div>
+
+      <div style="font-size: 14px; margin-top: 4px;">
+        סטטוס: ${booking.status}
+      </div>
+    </div>
+  `).join('');
+}
 </script>
 </body>
 
