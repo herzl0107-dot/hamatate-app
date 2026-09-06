@@ -110,6 +110,9 @@
 
 <button type="button" id="openBookingButton">הזמנת הסטודיו</button> <button type="button" id="myBookingsButton">ההזמנות שלי</button>
 <button type="button" id="hoursHistoryButton">היסטוריית שעות</button>
+    <button type="button" id="adminButton" style="display: none;">
+  ניהול הסטודיו
+</button>
     <button type="button" id="logoutButton">התנתקות</button>
   </section>
   <section id="myBookingsScreen" class="container" style="display: none;">
@@ -229,7 +232,11 @@ if (profile && profile.full_name) {
   document.getElementById('welcomeName').textContent =
     'היי ' + profile.full_name + ' 👋';
 }
-
+if (profile && profile.role === 'admin') {
+  document.getElementById('adminButton').style.display = 'block';
+} else {
+  document.getElementById('adminButton').style.display = 'none';
+}
 document.getElementById('remainingHours').textContent =
   balance ? balance.remaining_hours : 0;
 });document.getElementById('openBookingButton').addEventListener('click', () => {
