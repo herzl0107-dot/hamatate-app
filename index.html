@@ -907,8 +907,8 @@ while (days.length < 5) {
             <th style="padding: 10px; border: 1px solid #ccc;">שעה</th>
   `;
 
-  days.forEach(date => {
-    tableHTML += `
+[...days].reverse().forEach(date => {
+  tableHTML += `
       <th style="padding: 10px; border: 1px solid #ccc;">
         ${dayNames[date.getDay()]}<br>
         ${formatDisplayDate(date)}
@@ -933,8 +933,8 @@ while (days.length < 5) {
         </td>
     `;
 
-    bookedSlotsByDay.forEach(daySlots => {
-      const isBusy = daySlots.some(slot => {
+[...bookedSlotsByDay].reverse().forEach(daySlots => {
+  const isBusy = daySlots.some(slot => {
         const start = new Date(slot.start_time);
         const end = new Date(slot.end_time);
 
