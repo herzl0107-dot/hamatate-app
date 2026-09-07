@@ -1012,6 +1012,53 @@ document.getElementById('backFromAdminBlocksButton').addEventListener('click', (
   document.getElementById('adminBlocksScreen').style.display = 'none';
   document.getElementById('adminScreen').style.display = 'block';
 });
+  document.getElementById('createBlockButton').addEventListener('click', async () => {
+  const date = document.getElementById('blockDate').value;
+  const startTime = document.getElementById('blockStartTime').value;
+  const endTime = document.getElementById('blockEndTime').value;
+  const reason = document.getElementById('blockReason').value.trim();
+  const message = document.getElementById('blockMessage');
+
+  if (!date || !startTime || !endTime) {
+    message.textContent = 'יש למלא תאריך, שעת התחלה ושעת סיום.';
+    return;
+  }
+
+  const start = new Date(`${date}T${startTime}:00`);
+  const end = new Date(`${date}T${endTime}:00`);
+
+  if (end <= start) {
+    message.textContent = 'שעת הסיום חייבת להיות אחרי שעת ההתחלה.';
+    return;
+  }
+
+  message.textContent = 'יוצרת חסימה...';
+
+  const { data, error } = await supabaseClient.rpc('admin_create_studio_block', {
+    p_start: start.toISOString(),
+    p_end: end.toISOString(),
+    p_reason: reason || null
+  });
+
+  if (error) {
+    console.error(error);
+
+    if ((error.message || '').includes('NOT_ADMIN')) {
+      message.textContent = 'אין הרשאת מנהל לביצוע הפעולה.';
+    } else {
+      message.textContent = 'לא הצלחנו ליצור את החסימה.';
+    }
+
+    return;
+  }
+
+  message.textContent = 'החסימה נוצרה בהצלחה.';
+
+  document.getElementById('blockDate').value = '';
+  document.getElementById('blockStartTime').value = '';
+  document.getElementById('blockEndTime').value = '';
+  document.getElementById('blockReason').value = '';
+});
 </script>
 </body>
 
