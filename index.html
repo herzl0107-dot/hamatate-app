@@ -858,16 +858,14 @@ async function loadWeeklySchedule() {
   };
 
 const days = [];
-const currentDate = new Date(today);
 
-while (days.length < 5) {
-  const dayOfWeek = currentDate.getDay();
+const sunday = new Date(today);
+sunday.setDate(today.getDate() - today.getDay());
 
-  if (dayOfWeek >= 0 && dayOfWeek <= 4) {
-    days.push(new Date(currentDate));
-  }
-
-  currentDate.setDate(currentDate.getDate() + 1);
+for (let i = 0; i < 5; i++) {
+  const date = new Date(sunday);
+  date.setDate(sunday.getDate() + i);
+  days.push(date);
 }
   const formatDateForSupabase = (date) => {
     const year = date.getFullYear();
@@ -907,7 +905,7 @@ while (days.length < 5) {
             <th style="padding: 10px; border: 1px solid #ccc;">שעה</th>
   `;
 
-[...days].reverse().forEach(date => {
+days.forEach(date => {
   tableHTML += `
       <th style="padding: 10px; border: 1px solid #ccc;">
         ${dayNames[date.getDay()]}<br>
@@ -933,7 +931,7 @@ while (days.length < 5) {
         </td>
     `;
 
-[...bookedSlotsByDay].reverse().forEach(daySlots => {
+bookedSlotsByDay.forEach(daySlots => {
   const isBusy = daySlots.some(slot => {
         const start = new Date(slot.start_time);
         const end = new Date(slot.end_time);
