@@ -195,6 +195,14 @@
 
   <p id="blockMessage" class="note"></p>
 
+  <hr style="margin: 30px 0; border: 0; border-top: 1px solid #ccc;">
+
+  <h2 style="margin-bottom: 15px;">חסימות קיימות</h2>
+
+  <div id="adminBlocksList" aria-live="polite">
+    <p>טוענת חסימות...</p>
+  </div>
+
   <button type="button" id="backFromAdminBlocksButton">
     חזרה
   </button>
@@ -650,17 +658,18 @@ document.getElementById('myBookingsList').addEventListener('click', async (event
     }
   }
 });
-  document.getElementById('hoursHistoryButton').addEventListener('click', () => {
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('hoursHistoryScreen').style.display = 'block';
-});
-
 document.getElementById('hoursHistoryButton').addEventListener('click', async () => {
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('hoursHistoryScreen').style.display = 'block';
 
   await loadHoursHistory();
 });
+
+document.getElementById('backFromHoursHistoryButton').addEventListener('click', () => {
+  document.getElementById('hoursHistoryScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+});
+
   async function loadHoursHistory() {
   const list = document.getElementById('hoursHistoryList');
 
@@ -1003,15 +1012,103 @@ bookedSlotsByDay.forEach(daySlots => {
 
   list.innerHTML = tableHTML;
 } 
-document.getElementById('adminBlocksButton').addEventListener('click', () => {
+document.getElementById('adminBlocksButton').addEventListener('click', async () => {
   document.getElementById('adminScreen').style.display = 'none';
   document.getElementById('adminBlocksScreen').style.display = 'block';
+
+  await loadAdminBlocks();
 });
 
 document.getElementById('backFromAdminBlocksButton').addEventListener('click', () => {
   document.getElementById('adminBlocksScreen').style.display = 'none';
   document.getElementById('adminScreen').style.display = 'block';
 });
+
+async function loadAdminBlocks() {
+  const list = document.getElementById('adminBlocksList');
+  list.innerHTML = '<p>טוענת חסימות...</p>';
+
+  const { data, error } = await supabaseClient.rpc('admin_get_studio_blocks');
+
+  if (error) {
+    console.error(error);
+    list.innerHTML = '<p>לא הצלחנו לטעון את החסימות.</p>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = '<p>אין חסימות פעילות.</p>';
+    return;
+  }
+
+  const formatDate = (dateString) => new Intl.DateTimeFormat('he-IL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'Asia/Jerusalem'
+  }).format(new Date(dateString));
+
+  const formatTime = (dateString) => new Intl.DateTimeFormat('he-IL', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Jerusalem'
+  }).format(new Date(dateString));
+
+  list.replaceChildren(...data.map(block => {
+    const item = document.createElement('div');
+    item.style.cssText = 'padding: 16px 0; border-bottom: 1px solid #ccc;';
+
+    const date = document.createElement('strong');
+    date.textContent = formatDate(block.start_time);
+
+    const time = document.createElement('div');
+    time.style.marginTop = '6px';
+    time.textContent = `${formatTime(block.start_time)}–${formatTime(block.end_time)}`;
+
+    const reason = document.createElement('div');
+    reason.style.marginTop = '6px';
+    reason.textContent = block.reason || 'ללא סיבה';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'deleteBlockButton';
+    button.dataset.blockId = block.block_id;
+    button.textContent = 'הסרת חסימה';
+
+    item.append(date, time, reason, button);
+    return item;
+  }));
+}
+
+document.getElementById('adminBlocksList').addEventListener('click', async (event) => {
+  const button = event.target.closest('.deleteBlockButton');
+
+  if (!button) return;
+
+  const confirmed = confirm('להסיר את החסימה? השעות יחזרו להיות זמינות להזמנה.');
+
+  if (!confirmed) return;
+
+  button.disabled = true;
+  button.textContent = 'מסירה...';
+
+  const { error } = await supabaseClient.rpc('admin_delete_studio_block', {
+    p_block_id: button.dataset.blockId
+  });
+
+  if (error) {
+    console.error(error);
+    alert('לא הצלחנו להסיר את החסימה.');
+    button.disabled = false;
+    button.textContent = 'הסרת חסימה';
+    return;
+  }
+
+  alert('החסימה הוסרה בהצלחה.');
+  await loadAdminBlocks();
+});
+
   document.getElementById('createBlockButton').addEventListener('click', async () => {
   const date = document.getElementById('blockDate').value;
   const startTime = document.getElementById('blockStartTime').value;
@@ -1043,8 +1140,14 @@ document.getElementById('backFromAdminBlocksButton').addEventListener('click', (
   if (error) {
     console.error(error);
 
-    if ((error.message || '').includes('NOT_ADMIN')) {
+    const errorMessage = error.message || '';
+
+    if (errorMessage.includes('NOT_ADMIN')) {
       message.textContent = 'אין הרשאת מנהל לביצוע הפעולה.';
+    } else if (errorMessage.includes('TIME_NOT_AVAILABLE')) {
+      message.textContent = 'אי אפשר לחסום את השעות האלה כי כבר קיימת בהן הזמנה.';
+    } else if (errorMessage.includes('BLOCK_OVERLAP')) {
+      message.textContent = 'השעות האלה חופפות לחסימה קיימת.';
     } else {
       message.textContent = 'לא הצלחנו ליצור את החסימה.';
     }
@@ -1058,6 +1161,8 @@ document.getElementById('backFromAdminBlocksButton').addEventListener('click', (
   document.getElementById('blockStartTime').value = '';
   document.getElementById('blockEndTime').value = '';
   document.getElementById('blockReason').value = '';
+
+  await loadAdminBlocks();
 });
 </script>
 </body>
