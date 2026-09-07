@@ -857,19 +857,18 @@ async function loadWeeklySchedule() {
     4: 'ה׳'
   };
 
-  const days = [];
-  const currentDate = new Date(today);
+const days = [];
+const currentDate = new Date(today);
 
-  while (days.length < 5) {
-    const dayOfWeek = currentDate.getDay();
+while (days.length < 5) {
+  const dayOfWeek = currentDate.getDay();
 
-    if (dayOfWeek >= 0 && dayOfWeek <= 4) {
-      days.push(new Date(currentDate));
-    }
-
-    currentDate.setDate(currentDate.getDate() + 1);
+  if (dayOfWeek >= 0 && dayOfWeek <= 4) {
+    days.push(new Date(currentDate));
   }
 
+  currentDate.setDate(currentDate.getDate() + 1);
+}
   const formatDateForSupabase = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
