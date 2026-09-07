@@ -170,6 +170,35 @@
     חזרה
   </button>
 </section>
+  <section id="adminBlocksScreen" class="container" style="display: none;">
+  <h1>חסימת שעות</h1>
+
+  <label for="blockDate">תאריך</label>
+  <input type="date" id="blockDate">
+
+  <label for="blockStartTime">משעה</label>
+  <input type="time" id="blockStartTime" min="10:00" max="20:00" step="1800">
+
+  <label for="blockEndTime">עד שעה</label>
+  <input type="time" id="blockEndTime" min="10:00" max="20:00" step="1800">
+
+  <label for="blockReason">סיבה לחסימה</label>
+  <input
+    type="text"
+    id="blockReason"
+    placeholder="לדוגמה: אירוע בהרצל"
+  >
+
+  <button type="button" id="createBlockButton">
+    חסימת השעות
+  </button>
+
+  <p id="blockMessage" class="note"></p>
+
+  <button type="button" id="backFromAdminBlocksButton">
+    חזרה
+  </button>
+</section>
   <section id="adminUsersScreen" class="container" style="display: none;">
   <h1>ניהול כרטיסיות</h1>
 
@@ -974,7 +1003,15 @@ bookedSlotsByDay.forEach(daySlots => {
 
   list.innerHTML = tableHTML;
 } 
+document.getElementById('adminBlocksButton').addEventListener('click', () => {
+  document.getElementById('adminScreen').style.display = 'none';
+  document.getElementById('adminBlocksScreen').style.display = 'block';
+});
 
+document.getElementById('backFromAdminBlocksButton').addEventListener('click', () => {
+  document.getElementById('adminBlocksScreen').style.display = 'none';
+  document.getElementById('adminScreen').style.display = 'block';
+});
 </script>
 </body>
 
