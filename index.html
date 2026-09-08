@@ -93,11 +93,48 @@
   כניסה
 </button>
 
+    <button type="button" id="requestPasswordButton">
+      הגדרת סיסמה ראשונה / שכחתי סיסמה
+    </button>
+
+    <p id="passwordRequestMessage" class="note"></p>
+
     <p class="note">
       יש להתחבר באמצעות כתובת המייל המשויכת לכרטיסיית המטאטא.
     </p>
 
-  </main><section id="dashboard" class="container" style="display: none;">
+  </main>
+
+  <section id="passwordSetupScreen" class="container" style="display: none;">
+    <h1>בחירת סיסמה</h1>
+    <h2>בחרי סיסמה חדשה לחשבון שלך</h2>
+
+    <label for="newPassword">סיסמה חדשה</label>
+    <input
+      type="password"
+      id="newPassword"
+      minlength="8"
+      autocomplete="new-password"
+      placeholder="לפחות 8 תווים"
+    >
+
+    <label for="confirmNewPassword">אימות סיסמה</label>
+    <input
+      type="password"
+      id="confirmNewPassword"
+      minlength="8"
+      autocomplete="new-password"
+      placeholder="הקלידי שוב את הסיסמה"
+    >
+
+    <button type="button" id="saveNewPasswordButton">
+      שמירת הסיסמה
+    </button>
+
+    <p id="passwordSetupMessage" class="note"></p>
+  </section>
+
+  <section id="dashboard" class="container" style="display: none;">
   <h1>המטאטא</h1>
 
   <h2 id="welcomeName">היי 👋</h2>
@@ -294,10 +331,103 @@
   const SUPABASE_URL = 'https://kfqfivyeeotvaoaatifz.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_YDTHDuKsJPAsjkgAnExxyg_wjr73ie0';
 
+  const authCallbackType =
+    new URLSearchParams(window.location.hash.slice(1)).get('type') ||
+    new URLSearchParams(window.location.search).get('type');
+
   const supabaseClient = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
-  );document.getElementById('loginButton').addEventListener('click', async () => {
+  );
+
+function showPasswordSetupScreen() {
+  document.querySelector('main').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('passwordSetupScreen').style.display = 'block';
+}
+
+supabaseClient.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY' ||
+      (event === 'SIGNED_IN' && authCallbackType === 'invite')) {
+    showPasswordSetupScreen();
+  }
+});
+
+document.getElementById('requestPasswordButton').addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const button = document.getElementById('requestPasswordButton');
+  const message = document.getElementById('passwordRequestMessage');
+
+  if (!email) {
+    message.textContent = 'יש להזין את כתובת המייל שלך.';
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = 'שולחת קישור...';
+  message.textContent = '';
+
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo
+  });
+
+  button.disabled = false;
+  button.textContent = 'הגדרת סיסמה ראשונה / שכחתי סיסמה';
+
+  if (error) {
+    console.error(error);
+    message.textContent = 'לא הצלחנו לשלוח קישור כרגע. נסי שוב בעוד כמה דקות.';
+    return;
+  }
+
+  message.textContent =
+    'אם המייל קיים במערכת, נשלח אליו קישור מאובטח לבחירת סיסמה.';
+});
+
+document.getElementById('saveNewPasswordButton').addEventListener('click', async () => {
+  const password = document.getElementById('newPassword').value;
+  const confirmation = document.getElementById('confirmNewPassword').value;
+  const button = document.getElementById('saveNewPasswordButton');
+  const message = document.getElementById('passwordSetupMessage');
+
+  if (password.length < 8) {
+    message.textContent = 'הסיסמה צריכה להכיל לפחות 8 תווים.';
+    return;
+  }
+
+  if (password !== confirmation) {
+    message.textContent = 'הסיסמאות אינן זהות.';
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = 'שומרת...';
+  message.textContent = '';
+
+  const { error } = await supabaseClient.auth.updateUser({ password });
+
+  if (error) {
+    console.error(error);
+    message.textContent = 'לא הצלחנו לשמור את הסיסמה. ייתכן שהקישור פג תוקף.';
+    button.disabled = false;
+    button.textContent = 'שמירת הסיסמה';
+    return;
+  }
+
+  await supabaseClient.auth.signOut();
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  document.getElementById('passwordSetupScreen').style.display = 'none';
+  document.querySelector('main').style.display = 'block';
+  document.getElementById('password').value = '';
+  document.getElementById('newPassword').value = '';
+  document.getElementById('confirmNewPassword').value = '';
+
+  alert('הסיסמה נשמרה בהצלחה. עכשיו אפשר להתחבר.');
+});
+
+document.getElementById('loginButton').addEventListener('click', async () => {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
