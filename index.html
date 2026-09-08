@@ -203,7 +203,7 @@
     <label for="adminBookingsView">תצוגה</label>
     <select id="adminBookingsView" style="padding: 12px; border: 1px solid #ccc; border-radius: 8px;">
       <option value="week">שבוע נבחר</option>
-      <option value="all">כל ההזמנות</option>
+      <option value="all">כל הלו״ז</option>
     </select>
 
     <div id="adminWeekControls" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
@@ -223,6 +223,7 @@
       <option value="all">הכול</option>
       <option value="active">פעילות</option>
       <option value="cancelled">מבוטלות</option>
+      <option value="blocks">חסימות ואירועים</option>
     </select>
   </div>
 
@@ -997,7 +998,9 @@ function renderAdminBookings() {
     .filter((booking) => {
       const startsAt = new Date(booking.start_time);
       if (view === 'week' && (startsAt < weekStart || startsAt >= weekEnd)) return false;
-      if (status !== 'all' && booking.status !== status) return false;
+      if (status === 'blocks' && booking.entry_type !== 'block') return false;
+      if ((status === 'active' || status === 'cancelled') &&
+          (booking.entry_type === 'block' || booking.status !== status)) return false;
       if (search) {
         const haystack = `${booking.full_name || ''} ${booking.email || ''}`.toLowerCase();
         if (!haystack.includes(search)) return false;
@@ -1010,8 +1013,9 @@ function renderAdminBookings() {
     return sum + Math.max(0, (new Date(booking.end_time) - new Date(booking.start_time)) / 3600000);
   }, 0);
 
-  const activeCount = filtered.filter((booking) => booking.status === 'active').length;
-  const cancelledCount = filtered.filter((booking) => booking.status === 'cancelled').length;
+  const activeCount = filtered.filter((booking) => booking.entry_type !== 'block' && booking.status === 'active').length;
+  const cancelledCount = filtered.filter((booking) => booking.entry_type !== 'block' && booking.status === 'cancelled').length;
+  const blocksCount = filtered.filter((booking) => booking.entry_type === 'block').length;
 
   const formatDate = (dateString) => new Intl.DateTimeFormat('he-IL', {
     day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Jerusalem'
@@ -1034,8 +1038,8 @@ function renderAdminBookings() {
 
   summary.innerHTML = `
     <strong>${periodLabel}</strong><br>
-    ${filtered.length} הזמנות · ${totalHours.toFixed(1).replace('.0', '')} שעות<br>
-    פעילות: ${activeCount} · מבוטלות: ${cancelledCount}
+    ${filtered.length} פריטים · ${totalHours.toFixed(1).replace('.0', '')} שעות<br>
+    הזמנות פעילות: ${activeCount} · מבוטלות: ${cancelledCount} · חסימות ואירועים: ${blocksCount}
   `;
 
   if (filtered.length === 0) {
@@ -1086,9 +1090,10 @@ function renderAdminBookings() {
 
         table += `<td style="padding: 6px; border: 1px solid #ccc; min-width: 125px; vertical-align: top; background: ${matches.length ? '#f2f7f2' : '#fff'};">`;
         table += matches.map((booking) => `
-          <div style="padding: 5px; margin: 2px 0; border-radius: 5px; background: ${booking.status === 'active' ? '#dcefdc' : '#e5e5e5'}; font-size: 12px;">
+          <div style="padding: 5px; margin: 2px 0; border-radius: 5px; background: ${booking.entry_type === 'block' ? '#f6e7c8' : (booking.status === 'active' ? '#dcefdc' : '#e5e5e5')}; font-size: 12px;">
             <strong>${escapeHtml(booking.full_name || 'ללא שם')}</strong><br>
             ${formatTime(booking.start_time)}–${formatTime(booking.end_time)}
+            ${booking.entry_type === 'block' ? '<br>חסימה / אירוע' : ''}
             ${booking.status === 'cancelled' ? '<br>מבוטלת' : ''}
           </div>
         `).join('');
@@ -1118,7 +1123,7 @@ function renderAdminBookings() {
             <td style="padding: 8px; border: 1px solid #ccc; white-space: nowrap;">${formatTime(booking.start_time)}–${formatTime(booking.end_time)}</td>
             <td style="padding: 8px; border: 1px solid #ccc;">${escapeHtml(booking.full_name || 'ללא שם')}</td>
             <td style="padding: 8px; border: 1px solid #ccc;">${escapeHtml(booking.email || '')}</td>
-            <td style="padding: 8px; border: 1px solid #ccc;">${booking.status === 'active' ? 'פעילה' : 'מבוטלת'}</td>
+            <td style="padding: 8px; border: 1px solid #ccc;">${booking.entry_type === 'block' ? 'חסימה / אירוע' : (booking.status === 'active' ? 'פעילה' : 'מבוטלת')}</td>
           </tr>
         `).join('')}</tbody>
       </table>
@@ -1131,7 +1136,7 @@ async function loadAdminBookings() {
 
   list.innerHTML = '<p>טוענת הזמנות...</p>';
 
-  const { data, error } = await supabaseClient.rpc('admin_get_all_bookings');
+  const { data, error } = await supabaseClient.rpc('admin_get_schedule_entries');
 
   if (error) {
     console.error(error);
