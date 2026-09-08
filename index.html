@@ -247,6 +247,39 @@
   <section id="adminUsersScreen" class="container" style="display: none;">
   <h1>ניהול כרטיסיות</h1>
 
+  <h2 style="margin-bottom: 15px;">יצירת משתמשת חדשה</h2>
+
+  <label for="newUserFullName">שם מלא</label>
+  <input
+    type="text"
+    id="newUserFullName"
+    placeholder="שם המשתמשת"
+  >
+
+  <label for="newUserEmail">מייל</label>
+  <input
+    type="email"
+    id="newUserEmail"
+    placeholder="example@email.com"
+  >
+
+  <label for="newUserHours">סוג כרטיסייה</label>
+  <select id="newUserHours" style="width: 100%; box-sizing: border-box; padding: 14px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px;">
+    <option value="3">3 שעות</option>
+    <option value="5">5 שעות</option>
+    <option value="10">10 שעות</option>
+  </select>
+
+  <button type="button" id="createUserButton">
+    יצירת משתמשת ושליחת הזמנה
+  </button>
+
+  <p id="createUserMessage" class="note"></p>
+
+  <hr style="margin: 30px 0; border: 0; border-top: 1px solid #ccc;">
+
+  <h2 style="margin-bottom: 15px;">הוספת שעות למשתמשת קיימת</h2>
+
   <label for="adminUserEmail">מייל של המשתמשת</label>
   <input
     type="email"
@@ -954,6 +987,56 @@ document.getElementById('backFromAdminUsersButton').addEventListener('click', ()
   document.getElementById('adminUsersScreen').style.display = 'none';
   document.getElementById('adminScreen').style.display = 'block';
 });
+
+document.getElementById('createUserButton').addEventListener('click', async () => {
+  const fullName = document.getElementById('newUserFullName').value.trim();
+  const email = document.getElementById('newUserEmail').value.trim();
+  const hours = Number(document.getElementById('newUserHours').value);
+  const button = document.getElementById('createUserButton');
+  const message = document.getElementById('createUserMessage');
+
+  if (!fullName || !email) {
+    message.textContent = 'יש למלא שם מלא וכתובת מייל.';
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = 'יוצרת משתמשת...';
+  message.textContent = '';
+
+  const { data, error } = await supabaseClient.functions.invoke(
+    'admin-create-user',
+    { body: { fullName, email, hours } }
+  );
+
+  button.disabled = false;
+  button.textContent = 'יצירת משתמשת ושליחת הזמנה';
+
+  const errorCode = data?.error || error?.message || '';
+
+  if (error || data?.error) {
+    console.error(error || data);
+
+    if (errorCode.includes('USER_ALREADY_EXISTS')) {
+      message.textContent =
+        'כבר קיימת משתמשת עם המייל הזה. אפשר להוסיף לה שעות באזור למטה.';
+    } else if (errorCode.includes('NOT_ADMIN')) {
+      message.textContent = 'אין הרשאת מנהלת לביצוע הפעולה.';
+    } else {
+      message.textContent = 'לא הצלחנו ליצור את המשתמשת. נסי שוב.';
+    }
+
+    return;
+  }
+
+  message.textContent =
+    `המשתמשת נוצרה עם ${hours} שעות ונשלח אליה מייל לבחירת סיסמה.`;
+
+  document.getElementById('newUserFullName').value = '';
+  document.getElementById('newUserEmail').value = '';
+  document.getElementById('newUserHours').value = '3';
+});
+
   async function addHoursToUser(hoursToAdd) {
   const email = document.getElementById('adminUserEmail').value.trim();
   const message = document.getElementById('adminUserMessage');
