@@ -1043,15 +1043,87 @@ function renderAdminBookings() {
     return;
   }
 
-  list.innerHTML = filtered.map((booking) => `
-    <div style="padding: 16px; margin-bottom: 10px; background: #fff; border-radius: 8px; border-right: 5px solid ${booking.status === 'active' ? '#2e7d32' : '#999'};">
-      <strong>${formatDate(booking.start_time)}</strong>
-      <div style="margin-top: 6px;">${formatTime(booking.start_time)}–${formatTime(booking.end_time)}</div>
-      <div style="margin-top: 6px;">${escapeHtml(booking.full_name || 'ללא שם')}</div>
-      <div style="font-size: 14px; margin-top: 4px;">${escapeHtml(booking.email || '')}</div>
-      <div style="font-size: 14px; margin-top: 4px;">סטטוס: ${booking.status === 'active' ? 'פעילה' : 'מבוטלת'}</div>
+  if (view === 'week') {
+    const dayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳'];
+    const days = dayNames.map((name, index) => {
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + index);
+      return { name, date };
+    });
+
+    let table = `
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; min-width: 760px; border-collapse: collapse; text-align: center; background: #fff;">
+          <thead><tr>
+            <th style="padding: 9px; border: 1px solid #ccc; background: #eee;">שעה</th>
+            ${days.map((day) => `
+              <th style="padding: 9px; border: 1px solid #ccc; background: #eee;">
+                ${day.name}<br>${formatDate(day.date)}
+              </th>
+            `).join('')}
+          </tr></thead><tbody>
+    `;
+
+    for (let halfHour = 20; halfHour < 40; halfHour += 1) {
+      const slotStartHour = Math.floor(halfHour / 2);
+      const slotStartMinute = halfHour % 2 === 0 ? 0 : 30;
+      const slotEndTotalMinutes = slotStartHour * 60 + slotStartMinute + 30;
+      const slotLabel =
+        `${String(slotStartHour).padStart(2, '0')}:${String(slotStartMinute).padStart(2, '0')}–` +
+        `${String(Math.floor(slotEndTotalMinutes / 60)).padStart(2, '0')}:${String(slotEndTotalMinutes % 60).padStart(2, '0')}`;
+
+      table += `<tr><td style="padding: 7px; border: 1px solid #ccc; font-weight: bold; white-space: nowrap;">${slotLabel}</td>`;
+
+      for (const day of days) {
+        const slotStart = new Date(day.date);
+        slotStart.setHours(slotStartHour, slotStartMinute, 0, 0);
+        const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000);
+        const matches = filtered.filter((booking) => {
+          const start = new Date(booking.start_time);
+          const end = new Date(booking.end_time);
+          return start < slotEnd && end > slotStart;
+        });
+
+        table += `<td style="padding: 6px; border: 1px solid #ccc; min-width: 125px; vertical-align: top; background: ${matches.length ? '#f2f7f2' : '#fff'};">`;
+        table += matches.map((booking) => `
+          <div style="padding: 5px; margin: 2px 0; border-radius: 5px; background: ${booking.status === 'active' ? '#dcefdc' : '#e5e5e5'}; font-size: 12px;">
+            <strong>${escapeHtml(booking.full_name || 'ללא שם')}</strong><br>
+            ${formatTime(booking.start_time)}–${formatTime(booking.end_time)}
+            ${booking.status === 'cancelled' ? '<br>מבוטלת' : ''}
+          </div>
+        `).join('');
+        table += '</td>';
+      }
+
+      table += '</tr>';
+    }
+
+    list.innerHTML = table + '</tbody></table></div>';
+    return;
+  }
+
+  list.innerHTML = `
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; min-width: 720px; border-collapse: collapse; background: #fff;">
+        <thead><tr>
+          <th style="padding: 9px; border: 1px solid #ccc;">תאריך</th>
+          <th style="padding: 9px; border: 1px solid #ccc;">שעה</th>
+          <th style="padding: 9px; border: 1px solid #ccc;">שם</th>
+          <th style="padding: 9px; border: 1px solid #ccc;">מייל</th>
+          <th style="padding: 9px; border: 1px solid #ccc;">סטטוס</th>
+        </tr></thead>
+        <tbody>${filtered.map((booking) => `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ccc; white-space: nowrap;">${formatDate(booking.start_time)}</td>
+            <td style="padding: 8px; border: 1px solid #ccc; white-space: nowrap;">${formatTime(booking.start_time)}–${formatTime(booking.end_time)}</td>
+            <td style="padding: 8px; border: 1px solid #ccc;">${escapeHtml(booking.full_name || 'ללא שם')}</td>
+            <td style="padding: 8px; border: 1px solid #ccc;">${escapeHtml(booking.email || '')}</td>
+            <td style="padding: 8px; border: 1px solid #ccc;">${booking.status === 'active' ? 'פעילה' : 'מבוטלת'}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>
     </div>
-  `).join('');
+  `;
 }
 
 async function loadAdminBookings() {
