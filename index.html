@@ -382,7 +382,7 @@
   const SUPABASE_URL = 'https://kfqfivyeeotvaoaatifz.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_YDTHDuKsJPAsjkgAnExxyg_wjr73ie0';
 
-  const authCallbackType =
+  let authCallbackType =
     new URLSearchParams(window.location.hash.slice(1)).get('type') ||
     new URLSearchParams(window.location.search).get('type');
 
@@ -466,6 +466,7 @@ document.getElementById('saveNewPasswordButton').addEventListener('click', async
     return;
   }
 
+  authCallbackType = null;
   await supabaseClient.auth.signOut();
   window.history.replaceState({}, document.title, window.location.pathname);
 
