@@ -280,11 +280,12 @@
 
   <details>
     <summary style="cursor: pointer; font-weight: bold;">ייבוא מרוכז ללא שליחת מיילים</summary>
-    <p class="note">הייבוא זמין למנהלת בלבד. יש להדביק רשימת JSON מאושרת.</p>
+    <p class="note">הייבוא זמין למנהלת בלבד. בחרי את קובץ הייבוא המאושר.</p>
+    <input type="file" id="bulkUsersFile" accept=".json,application/json">
     <textarea
       id="bulkUsersJson"
       rows="5"
-      style="width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ccc; border-radius: 8px;"
+      style="display: none;"
       placeholder='[{"fullName":"שם","email":"mail@example.com","hours":3}]'
     ></textarea>
     <button type="button" id="bulkCreateUsersButton">
@@ -1093,6 +1094,28 @@ document.getElementById('bulkCreateUsersButton').addEventListener('click', async
     `ושגיאות: ${data.errors}. לא נשלחו מיילים.`;
 
   if (data.errors === 0) input.value = '';
+});
+
+document.getElementById('bulkUsersFile').addEventListener('change', async (event) => {
+  const file = event.target.files?.[0];
+  const message = document.getElementById('bulkCreateUsersMessage');
+
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const users = JSON.parse(text);
+
+    if (!Array.isArray(users) || users.length === 0) {
+      throw new Error('Invalid import file');
+    }
+
+    document.getElementById('bulkUsersJson').value = text;
+    message.textContent = `הקובץ מוכן: ${users.length} משתמשות ומשתמשים.`;
+  } catch {
+    document.getElementById('bulkUsersJson').value = '';
+    message.textContent = 'לא הצלחנו לקרוא את קובץ הייבוא.';
+  }
 });
 
   async function addHoursToUser(hoursToAdd) {
