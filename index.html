@@ -196,8 +196,37 @@
     חזרה
   </button>
 </section>
-  <section id="adminBookingsScreen" class="container" style="display: none;">
-  <h1>כל ההזמנות</h1>
+<section id="adminBookingsScreen" class="container" style="display: none;">
+  <h1>לו״ז והזמנות</h1>
+
+  <div style="display: grid; gap: 10px; margin-bottom: 20px;">
+    <label for="adminBookingsView">תצוגה</label>
+    <select id="adminBookingsView" style="padding: 12px; border: 1px solid #ccc; border-radius: 8px;">
+      <option value="week">שבוע נבחר</option>
+      <option value="all">כל ההזמנות</option>
+    </select>
+
+    <div id="adminWeekControls" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+      <button type="button" id="adminPreviousWeekButton">שבוע קודם</button>
+      <button type="button" id="adminCurrentWeekButton">השבוע</button>
+      <button type="button" id="adminNextWeekButton">שבוע הבא</button>
+    </div>
+
+    <label for="adminScheduleDate">מעבר לתאריך</label>
+    <input type="date" id="adminScheduleDate">
+
+    <label for="adminBookingsSearch">חיפוש</label>
+    <input type="search" id="adminBookingsSearch" placeholder="שם או מייל">
+
+    <label for="adminBookingsStatus">סטטוס</label>
+    <select id="adminBookingsStatus" style="padding: 12px; border: 1px solid #ccc; border-radius: 8px;">
+      <option value="all">הכול</option>
+      <option value="active">פעילות</option>
+      <option value="cancelled">מבוטלות</option>
+    </select>
+  </div>
+
+  <div id="adminBookingsSummary" style="padding: 14px; margin-bottom: 16px; background: #fff; border-radius: 8px;"></div>
 
   <div id="adminBookingsList">
     <p>טוענת הזמנות...</p>
@@ -939,7 +968,93 @@ document.getElementById('backFromAdminBookingsButton').addEventListener('click',
   document.getElementById('adminBookingsScreen').style.display = 'none';
   document.getElementById('adminScreen').style.display = 'block';
 });
-  async function loadAdminBookings() {
+let adminBookingsData = [];
+let adminBookingsAnchorDate = new Date();
+
+function startOfAdminWeek(date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());
+  return start;
+}
+
+function renderAdminBookings() {
+  const list = document.getElementById('adminBookingsList');
+  const summary = document.getElementById('adminBookingsSummary');
+  const view = document.getElementById('adminBookingsView').value;
+  const status = document.getElementById('adminBookingsStatus').value;
+  const search = document.getElementById('adminBookingsSearch').value.trim().toLowerCase();
+  const weekControls = document.getElementById('adminWeekControls');
+  const dateInput = document.getElementById('adminScheduleDate');
+  weekControls.style.display = view === 'week' ? 'grid' : 'none';
+  dateInput.disabled = view !== 'week';
+
+  const weekStart = startOfAdminWeek(adminBookingsAnchorDate);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  const filtered = adminBookingsData
+    .filter((booking) => {
+      const startsAt = new Date(booking.start_time);
+      if (view === 'week' && (startsAt < weekStart || startsAt >= weekEnd)) return false;
+      if (status !== 'all' && booking.status !== status) return false;
+      if (search) {
+        const haystack = `${booking.full_name || ''} ${booking.email || ''}`.toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+  const totalHours = filtered.reduce((sum, booking) => {
+    return sum + Math.max(0, (new Date(booking.end_time) - new Date(booking.start_time)) / 3600000);
+  }, 0);
+
+  const activeCount = filtered.filter((booking) => booking.status === 'active').length;
+  const cancelledCount = filtered.filter((booking) => booking.status === 'cancelled').length;
+
+  const formatDate = (dateString) => new Intl.DateTimeFormat('he-IL', {
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Jerusalem'
+  }).format(new Date(dateString));
+
+  const formatTime = (dateString) => new Intl.DateTimeFormat('he-IL', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem'
+  }).format(new Date(dateString));
+
+  const escapeHtml = (value) => String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
+  const periodLabel = view === 'week'
+    ? `${formatDate(weekStart)}–${formatDate(new Date(weekEnd.getTime() - 1))}`
+    : 'כל התקופות';
+
+  summary.innerHTML = `
+    <strong>${periodLabel}</strong><br>
+    ${filtered.length} הזמנות · ${totalHours.toFixed(1).replace('.0', '')} שעות<br>
+    פעילות: ${activeCount} · מבוטלות: ${cancelledCount}
+  `;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<p>לא נמצאו הזמנות לפי הסינון שבחרת.</p>';
+    return;
+  }
+
+  list.innerHTML = filtered.map((booking) => `
+    <div style="padding: 16px; margin-bottom: 10px; background: #fff; border-radius: 8px; border-right: 5px solid ${booking.status === 'active' ? '#2e7d32' : '#999'};">
+      <strong>${formatDate(booking.start_time)}</strong>
+      <div style="margin-top: 6px;">${formatTime(booking.start_time)}–${formatTime(booking.end_time)}</div>
+      <div style="margin-top: 6px;">${escapeHtml(booking.full_name || 'ללא שם')}</div>
+      <div style="font-size: 14px; margin-top: 4px;">${escapeHtml(booking.email || '')}</div>
+      <div style="font-size: 14px; margin-top: 4px;">סטטוס: ${booking.status === 'active' ? 'פעילה' : 'מבוטלת'}</div>
+    </div>
+  `).join('');
+}
+
+async function loadAdminBookings() {
   const list = document.getElementById('adminBookingsList');
 
   list.innerHTML = '<p>טוענת הזמנות...</p>';
@@ -952,51 +1067,39 @@ document.getElementById('backFromAdminBookingsButton').addEventListener('click',
     return;
   }
 
-  if (!data || data.length === 0) {
-    list.innerHTML = '<p>אין הזמנות במערכת.</p>';
-    return;
-  }
-
-  const formatDate = (dateString) => {
-    return new Intl.DateTimeFormat('he-IL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      timeZone: 'Asia/Jerusalem'
-    }).format(new Date(dateString));
-  };
-
-  const formatTime = (dateString) => {
-    return new Intl.DateTimeFormat('he-IL', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'Asia/Jerusalem'
-    }).format(new Date(dateString));
-  };
-
-  list.innerHTML = data.map(booking => `
-    <div style="padding: 16px 0; border-bottom: 1px solid #ccc;">
-      <strong>${formatDate(booking.start_time)}</strong>
-
-      <div style="margin-top: 6px;">
-        ${formatTime(booking.start_time)}–${formatTime(booking.end_time)}
-      </div>
-
-      <div style="margin-top: 6px;">
-        ${booking.full_name || 'ללא שם'}
-      </div>
-
-      <div style="font-size: 14px; margin-top: 4px;">
-        ${booking.email || ''}
-      </div>
-
-      <div style="font-size: 14px; margin-top: 4px;">
-        סטטוס: ${booking.status}
-      </div>
-    </div>
-  `).join('');
+  adminBookingsData = data || [];
+  adminBookingsAnchorDate = new Date();
+  document.getElementById('adminScheduleDate').value = formatDateForInput(adminBookingsAnchorDate);
+  renderAdminBookings();
 }
+
+document.getElementById('adminPreviousWeekButton').addEventListener('click', () => {
+  adminBookingsAnchorDate.setDate(adminBookingsAnchorDate.getDate() - 7);
+  document.getElementById('adminScheduleDate').value = formatDateForInput(adminBookingsAnchorDate);
+  renderAdminBookings();
+});
+
+document.getElementById('adminNextWeekButton').addEventListener('click', () => {
+  adminBookingsAnchorDate.setDate(adminBookingsAnchorDate.getDate() + 7);
+  document.getElementById('adminScheduleDate').value = formatDateForInput(adminBookingsAnchorDate);
+  renderAdminBookings();
+});
+
+document.getElementById('adminCurrentWeekButton').addEventListener('click', () => {
+  adminBookingsAnchorDate = new Date();
+  document.getElementById('adminScheduleDate').value = formatDateForInput(adminBookingsAnchorDate);
+  renderAdminBookings();
+});
+
+document.getElementById('adminScheduleDate').addEventListener('change', (event) => {
+  if (!event.target.value) return;
+  adminBookingsAnchorDate = new Date(`${event.target.value}T12:00:00`);
+  renderAdminBookings();
+});
+
+document.getElementById('adminBookingsView').addEventListener('change', renderAdminBookings);
+document.getElementById('adminBookingsStatus').addEventListener('change', renderAdminBookings);
+document.getElementById('adminBookingsSearch').addEventListener('input', renderAdminBookings);
   document.getElementById('adminUsersButton').addEventListener('click', () => {
   document.getElementById('adminScreen').style.display = 'none';
   document.getElementById('adminUsersScreen').style.display = 'block';
