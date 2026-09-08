@@ -278,6 +278,23 @@
 
   <hr style="margin: 30px 0; border: 0; border-top: 1px solid #ccc;">
 
+  <details>
+    <summary style="cursor: pointer; font-weight: bold;">ייבוא מרוכז ללא שליחת מיילים</summary>
+    <p class="note">הייבוא זמין למנהלת בלבד. יש להדביק רשימת JSON מאושרת.</p>
+    <textarea
+      id="bulkUsersJson"
+      rows="5"
+      style="width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ccc; border-radius: 8px;"
+      placeholder='[{"fullName":"שם","email":"mail@example.com","hours":3}]'
+    ></textarea>
+    <button type="button" id="bulkCreateUsersButton">
+      יצירת משתמשות ללא מיילים
+    </button>
+    <p id="bulkCreateUsersMessage" class="note"></p>
+  </details>
+
+  <hr style="margin: 30px 0; border: 0; border-top: 1px solid #ccc;">
+
   <h2 style="margin-bottom: 15px;">הוספת שעות למשתמשת קיימת</h2>
 
   <label for="adminUserEmail">מייל של המשתמשת</label>
@@ -1035,6 +1052,47 @@ document.getElementById('createUserButton').addEventListener('click', async () =
   document.getElementById('newUserFullName').value = '';
   document.getElementById('newUserEmail').value = '';
   document.getElementById('newUserHours').value = '3';
+});
+
+document.getElementById('bulkCreateUsersButton').addEventListener('click', async () => {
+  const input = document.getElementById('bulkUsersJson');
+  const button = document.getElementById('bulkCreateUsersButton');
+  const message = document.getElementById('bulkCreateUsersMessage');
+  let users;
+
+  try {
+    users = JSON.parse(input.value);
+  } catch {
+    message.textContent = 'הרשימה אינה בפורמט תקין.';
+    return;
+  }
+
+  if (!Array.isArray(users) || users.length === 0) {
+    message.textContent = 'לא נמצאו משתמשות לייבוא.';
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent = `יוצרת ${users.length} משתמשות ללא שליחת מיילים...`;
+
+  const { data, error } = await supabaseClient.functions.invoke(
+    'admin-create-user',
+    { body: { users } }
+  );
+
+  button.disabled = false;
+
+  if (error || !data?.success) {
+    console.error(error || data);
+    message.textContent = 'הייבוא לא הושלם. לא תישלחנה הזמנות במייל.';
+    return;
+  }
+
+  message.textContent =
+    `נוצרו ${data.created} משתמשות, דולגו ${data.skipped} קיימות, ` +
+    `ושגיאות: ${data.errors}. לא נשלחו מיילים.`;
+
+  if (data.errors === 0) input.value = '';
 });
 
   async function addHoursToUser(hoursToAdd) {
