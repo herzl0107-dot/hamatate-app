@@ -58,6 +58,27 @@
       cursor: pointer;
     }
 
+    .back-button {
+      width: auto;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 0 0 24px auto;
+      padding: 9px 14px;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .back-button:hover {
+      background: #f0f0f0;
+    }
+
     .note {
       margin-top: 25px;
       font-size: 14px;
@@ -156,28 +177,34 @@
     <button type="button" id="logoutButton">התנתקות</button>
   </section>
   <section id="myBookingsScreen" class="container" style="display: none;">
+  <button type="button" id="backFromMyBookingsButton" class="back-button">
+    → חזרה
+  </button>
+
   <h1>ההזמנות שלי</h1>
 
   <div id="myBookingsList">
     <p>טוענת הזמנות...</p>
   </div>
 
-  <button type="button" id="backFromMyBookingsButton">
-    חזרה
-  </button>
 </section>
   <section id="hoursHistoryScreen" class="container" style="display: none;">
+  <button type="button" id="backFromHoursHistoryButton" class="back-button">
+    → חזרה
+  </button>
+
   <h1>היסטוריית שעות</h1>
 
   <div id="hoursHistoryList">
     <p>טוענת היסטוריה...</p>
   </div>
 
-  <button type="button" id="backFromHoursHistoryButton">
-    חזרה
-  </button>
 </section>
 <section id="adminScreen" class="container" style="display: none;">
+  <button type="button" id="backFromAdminButton" class="back-button">
+    → חזרה
+  </button>
+
   <h1>ניהול הסטודיו</h1>
 
   <button type="button" id="adminBookingsButton">
@@ -192,11 +219,12 @@
     חסימת שעות
   </button>
 
-  <button type="button" id="backFromAdminButton">
-    חזרה
-  </button>
 </section>
 <section id="adminBookingsScreen" class="container" style="display: none;">
+  <button type="button" id="backFromAdminBookingsButton" class="back-button">
+    → חזרה
+  </button>
+
   <h1>לו״ז והזמנות</h1>
 
   <div style="display: grid; gap: 10px; margin-bottom: 20px;">
@@ -233,11 +261,12 @@
     <p>טוענת הזמנות...</p>
   </div>
 
-  <button type="button" id="backFromAdminBookingsButton">
-    חזרה
-  </button>
 </section>
   <section id="adminBlocksScreen" class="container" style="display: none;">
+  <button type="button" id="backFromAdminBlocksButton" class="back-button">
+    → חזרה
+  </button>
+
   <h1>חסימת שעות</h1>
 
   <label for="blockDate">תאריך</label>
@@ -270,11 +299,12 @@
     <p>טוענת חסימות...</p>
   </div>
 
-  <button type="button" id="backFromAdminBlocksButton">
-    חזרה
-  </button>
 </section>
   <section id="adminUsersScreen" class="container" style="display: none;">
+  <button type="button" id="backFromAdminUsersButton" class="back-button">
+    → חזרה
+  </button>
+
   <h1>ניהול כרטיסיות</h1>
 
   <h2 style="margin-bottom: 15px;">יצירת משתמשת חדשה</h2>
@@ -349,23 +379,25 @@
 
   <p id="adminUserMessage" class="note"></p>
 
-  <button type="button" id="backFromAdminUsersButton">
-    חזרה
-  </button>
 </section>
   <section id="weeklyScheduleScreen" class="container" style="display: none;">
+  <button type="button" id="backFromWeeklyScheduleButton" class="back-button">
+    → חזרה
+  </button>
+
   <h1>לו״ז שבועי</h1>
 
   <div id="weeklyScheduleList">
     <p>טוענת לו״ז...</p>
   </div>
 
-  <button type="button" id="backFromWeeklyScheduleButton">
-    חזרה
-  </button>
 </section>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <section id="bookingScreen" class="container" style="display: none;">
+  <button type="button" id="backToDashboardButton" class="back-button">
+    → חזרה
+  </button>
+
   <h1>הזמנת הסטודיו</h1>
 
   <label for="bookingDate">תאריך</label>
@@ -398,10 +430,6 @@
 
   <button type="button" id="confirmBookingButton">
     אישור הזמנה
-  </button>
-
-  <button type="button" id="backToDashboardButton">
-    חזרה
   </button>
 
   <p class="note">
